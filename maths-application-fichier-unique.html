@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maths 6ème — Révisions</title>
+  <meta name="description" content="Application de révision du programme de mathématiques de 6ème" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function decStr(x) {
+      return String(Math.round(x * 100) / 100).replace(".", ",");
+    }
+
+    const GENERATORS = {
+      decimaux: [
+        () => {
+          const a = randInt(10, 999) / 10, b = randInt(10, 999) / 10;
+          return { question: `Calcule : ${decStr(a)} + ${decStr(b)}`, answer: decStr(a + b), hint: "Aligne bien les virgules avant d'additionner.", stepsSolution: `On aligne les virgules, puis on additionne :\n${decStr(a)} + ${decStr(b)}\n= ${decStr(a + b)}` };
+        },
+        () => {
+          const a = randInt(50, 999) / 10, b = randInt(10, 400) / 10;
+          return { question: `Calcule : ${decStr(a)} − ${decStr(b)}`, answer: decStr(a - b), hint: "Pose la soustraction en alignant les virgules.", stepsSolution: `On aligne les virgules, puis on soustrait :\n${decStr(a)} − ${decStr(b)}\n= ${decStr(a - b)}` };
+        },
+        () => {
+          const d = randInt(101, 9999) / 100;
+          const pos = randInt(1, 2);
+          const mult = pos === 1 ? 10 : 100;
+          return { question: `Calcule : ${decStr(d)} × ${mult}`, answer: decStr(d * mult), hint: "Multiplier par 10 décale la virgule d'un rang vers la droite.", stepsSolution: `Multiplier par ${mult} décale la virgule de ${pos} rang(s) vers la droite :\n${decStr(d)} × ${mult} = ${decStr(d * mult)}` };
+        },
+        () => {
+          const d = randInt(101, 9999) / 10;
+          const div = pick([10, 100]);
+          return { question: `Calcule : ${decStr(d)} ÷ ${div}`, answer: decStr(d / div), hint: "Diviser par 10 décale la virgule d'un rang vers la gauche.", stepsSolution: `Diviser par ${div} décale la virgule de ${div === 10 ? "1" : "2"} rang(s) vers la gauche :\n${decStr(d)} ÷ ${div} = ${decStr(d / div)}` };
+        },
+        () => {
+          const w = randInt(2, 9), f = randInt(1, 9);
+          const d = w + f / 10;
+          return { question: `Écris sous forme décimale : ${w} + ${f}/10`, answer: decStr(d), hint: "Un dixième = 0,1.", stepsSolution: `${f}/10 = ${f} dixièmes = ${decStr(f / 10)}\nDonc ${w} + ${f}/10 = ${decStr(d)}` };
+        },
+      ],
+      fractions: [
+        () => {
+          const d = randInt(2, 12), n = randInt(1, d * 4 - 1);
+          const w = Math.floor(n / d), r = n % d;
+          const answer = r === 0 ? `${w}` : `${w} ${r}/${d}`;
+          return { question: `Écris ${n}/${d} comme la somme d'un entier et d'une fraction inférieure à 1 (réponds comme "2 3/5" ou juste l'entier si possible)`, answer, hint: "Cherche combien de fois le dénominateur rentre dans le numérateur." };
+        },
+        () => {
+          const d = randInt(2, 10), n1 = randInt(1, d - 2), n2 = randInt(1, d - n1);
+          return { question: `Calcule : ${n1}/${d} + ${n2}/${d}`, answer: `${n1 + n2}/${d}`, hint: "Même dénominateur : on additionne les numérateurs." };
+        },
+        () => {
+          const d1 = randInt(2, 6), d2 = d1 * randInt(2, 4);
+          const n1 = randInt(1, d1 - 1), n2 = n1 * (d2 / d1);
+          const good = `${n2}/${d2}`;
+          return { question: `Complète l'égalité : ${n1}/${d1} = ?/${d2}`, answer: good, choices: shuffle([good, `${n2 + 1}/${d2}`, `${n2 - 1 > 0 ? n2 - 1 : n2 + 2}/${d2}`, `${n1 * 2}/${d2}`]), hint: "Par combien multiplie-t-on le dénominateur ? Multiplie le numérateur pareil." };
+        },
+        () => {
+          const d = randInt(2, 9), n = randInt(d + 1, 4 * d);
+          return { question: `${n}/${d} est-il supérieur à 1 ? (oui / non)`, answer: n > d ? "oui" : "non", choices: ["oui", "non"], hint: "Compare le numérateur et le dénominateur." };
+        },
+      ],
+      calcul: [
+        () => {
+          const a = randInt(11, 49), b = randInt(11, 49);
+          return { question: `Calcule : ${a} × ${b}`, answer: String(a * b), hint: "Décompose : 40 × 12 puis 3 × 12 par exemple.", stepsSolution: `On décompose ${b} = ${Math.floor(b / 10) * 10} + ${b % 10} :\n${a} × ${b} = ${a} × ${Math.floor(b / 10) * 10} + ${a} × ${b % 10}\n= ${a * Math.floor(b / 10) * 10} + ${a * (b % 10)}\n= ${a * b}` };
+        },
+        () => {
+          const t = randInt(2, 10), r = randInt(0, t - 1), q = randInt(3, 20);
+          return { question: `Calcule : ${t * q + r} ÷ ${t} (division euclidienne, donne juste le quotient)`, answer: String(q), hint: "Combien de fois le diviseur rentre-t-il dans le nombre ?", stepsSolution: `On cherche combien de fois ${t} rentre dans ${t * q + r} :\n${t} × ${q} = ${t * q} (et il reste ${r}, plus petit que ${t})\nDonc le quotient est ${q}` };
+        },
+        () => {
+          const n = randInt(2, 25);
+          return { question: `Calcule le double de ${n}`, answer: String(n * 2), hint: "Double = × 2.", stepsSolution: `Double = × 2\n${n} × 2 = ${n * 2}` };
+        },
+        () => {
+          const n = pick([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 25, 50]);
+          return { question: `Calcule la moitié de ${n * 2}`, answer: String(n), hint: "Moitié = ÷ 2.", stepsSolution: `Moitié = ÷ 2\n${n * 2} ÷ 2 = ${n}` };
+        },
+        () => {
+          const a = randInt(2, 12), b = randInt(2, 12), c = randInt(2, 12);
+          return { question: `Calcule : ${a} + ${b} × ${c}`, answer: String(a + b * c), hint: "La multiplication est prioritaire sur l'addition !", stepsSolution: `La multiplication est prioritaire :\n${a} + ${b} × ${c}\n= ${a} + ${b * c}\n= ${a + b * c}` };
+        },
+      ],
+      geometrie: [
+        () => {
+          const r = randInt(2, 25);
+          return { question: `Un cercle a pour rayon ${r} cm. Quel est son diamètre (en cm) ?`, answer: String(r * 2), hint: "Diamètre = 2 × rayon." };
+        },
+        () => {
+          const d = randInt(4, 50);
+          return { question: `Un cercle a pour diamètre ${d} cm. Quel est son rayon (en cm) ?`, answer: String(d / 2), hint: "Rayon = diamètre ÷ 2." };
+        },
+        () => {
+          const types = [
+            { q: "Comment appelle-t-on un quadrilatère qui a 4 côtés de même longueur et 4 angles droits ?", a: "un carré", choices: ["un carré", "un rectangle", "un losange", "un parallélogramme"] },
+            { q: "Comment appelle-t-on un triangle qui a un angle droit ?", a: "un triangle rectangle", choices: ["un triangle rectangle", "un triangle isocèle", "un triangle équilatéral", "un triangle quelconque"] },
+            { q: "Comment appelle-t-on un quadrilatère avec 4 côtés de même longueur mais pas d'angle droit ?", a: "un losange", choices: ["un losange", "un carré", "un rectangle", "un trapèze"] },
+            { q: "Comment appelle-t-on un triangle qui a 3 côtés de même longueur ?", a: "un triangle équilatéral", choices: ["un triangle équilatéral", "un triangle rectangle", "un triangle isocèle", "un triangle plat"] },
+            { q: "La somme des mesures des angles d'un triangle vaut toujours... ?", a: "180°", choices: ["180°", "360°", "90°", "100°"] },
+            { q: "Comment appelle-t-on un angle qui mesure 90° ?", a: "un angle droit", choices: ["un angle droit", "un angle aigu", "un angle obtus", "un angle plat"] },
+          ];
+          const t = pick(types);
+          return { question: t.q, answer: t.a, choices: shuffle(t.choices), hint: "Repense aux définitions du cours." };
+        },
+        () => {
+          const b = randInt(2, 20), h = randInt(2, 20);
+          return { question: `Quelle est l'aire d'un rectangle de ${b} cm sur ${h} cm (en cm²) ?`, answer: String(b * h), hint: "Aire du rectangle = longueur × largeur." };
+        },
+        () => {
+          const c = randInt(2, 20);
+          return { question: `Quelle est l'aire d'un carré de côté ${c} cm (en cm²) ?`, answer: String(c * c), hint: "Aire du carré = côté × côté." };
+        },
+      ],
+      proportionnalite: [
+        () => {
+          const k = randInt(2, 9), q = randInt(2, 9);
+          return { question: `3 cahiers coûtent ${3 * k} €. Combien coûtent ${q} cahiers (en €) ?`, answer: String(q * k), hint: "Trouve d'abord le prix d'un cahier." };
+        },
+        () => {
+          const k = randInt(2, 12), q = randInt(2, 8);
+          return { question: `Une recette pour 4 personnes utilise ${4 * k} g de farine. Combien de farine (en g) pour ${q} personnes ?`, answer: String(q * k), hint: "Cherche la quantité pour 1 personne, puis multiplie." };
+        },
+        () => {
+          const total = randInt(3, 12) * 100, filles = randInt(100, total - 100);
+          const p = Math.round((filles / total) * 100);
+          return { question: `Dans une classe de ${total} élèves, ${filles} sont des filles. Quel pourcentage de filles (en %) ?`, answer: String(p), hint: "Pourcentage = (partie ÷ total) × 100." };
+        },
+        () => {
+          const pct = pick([10, 20, 25, 50, 75, 5]);
+          const n = randInt(2, 20) * 20;
+          return { question: `Calcule ${pct}% de ${n}.`, answer: String(n * pct / 100), hint: "50% = moitié, 25% = quart, 10% = diviser par 10." };
+        },
+      ],
+      conversions: [
+        () => {
+          const m = randInt(1, 5000);
+          const target = pick(["cm", "mm", "km"]);
+          const f = target === "cm" ? 100 : target === "mm" ? 1000 : 0.001;
+          return { question: `Convertis : ${m} m = ? ${target}`, answer: decStr(m * f), hint: "1 m = 100 cm = 1000 mm ; 1 km = 1000 m." };
+        },
+        () => {
+          const kg = randInt(1, 50);
+          const target = pick(["g", "mg"]);
+          const f = target === "g" ? 1000 : 1000000;
+          return { question: `Convertis : ${kg} kg = ? ${target}`, answer: String(kg * f), hint: "1 kg = 1000 g = 1 000 000 mg." };
+        },
+        () => {
+          const l = randInt(1, 50);
+          const target = pick(["cL", "mL"]);
+          const f = target === "cL" ? 100 : 1000;
+          return { question: `Convertis : ${l} L = ? ${target}`, answer: String(l * f), hint: "1 L = 100 cL = 1000 mL." };
+        },
+        () => {
+          const h = randInt(1, 23), m = randInt(1, 59);
+          return { question: `Convertis : ${h} h ${m} min = ? minutes`, answer: String(h * 60 + m), hint: "1 heure = 60 minutes." };
+        },
+      ],
+    };
+
+    const THEMES = [
+      { key: "decimaux", label: "Nombres décimaux", emoji: "🔢", color: "from-sky-400 to-blue-500" },
+      { key: "fractions", label: "Fractions", emoji: "🍕", color: "from-orange-400 to-amber-500" },
+      { key: "calcul", label: "Calcul mental", emoji: "⚡", color: "from-violet-400 to-purple-500" },
+      { key: "geometrie", label: "Géométrie", emoji: "📐", color: "from-emerald-400 to-teal-500" },
+      { key: "proportionnalite", label: "Proportionnalité", emoji: "📊", color: "from-pink-400 to-rose-500" },
+      { key: "conversions", label: "Conversions", emoji: "📏", color: "from-cyan-400 to-sky-500" },
+    ];
+
+    const NB_QUESTIONS = 10;
+
+    function normalize(s) {
+      return s.trim().toLowerCase().replace(/\s+/g, " ").replace(/,/g, ".");
+    }
+
+    function checkAnswer(user, answer) {
+      const u = normalize(user), a = normalize(answer);
+      const un = parseFloat(u), an = parseFloat(a);
+      if (!isNaN(un) && !isNaN(an)) return Math.abs(un - an) < 0.001;
+      return u === a;
+    }
+
+    const PRAISE = ["Bravo ! 🎉", "Super ! ⭐", "Excellent ! 💪", "Bien joué ! 👏", "Parfait ! ✨"];
+    const ENCOURAGE = ["Presque !", "Courage, réessaie !", "Pas grave, continue !", "Tu vas y arriver !"];
+
+    function App() {
+      const [screen, setScreen] = useState("home");
+      const [theme, setTheme] = useState(null);
+      const [questions, setQuestions] = useState([]);
+      const [idx, setIdx] = useState(0);
+      const [score, setScore] = useState(0);
+      const [answered, setAnswered] = useState(false);
+      const [isCorrect, setIsCorrect] = useState(false);
+      const [input, setInput] = useState("");
+      const [steps, setSteps] = useState("");
+      const [stepsError, setStepsError] = useState(null);
+      const [showHint, setShowHint] = useState(false);
+      const [stats, setStats] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("maths6stats") || "{}"); } catch (e) { return {}; }
+      });
+      const [streak, setStreak] = useState(0);
+
+      useEffect(() => {
+        try { localStorage.setItem("maths6stats", JSON.stringify(stats)); } catch (e) {}
+      }, [stats]);
+
+      const totalDone = Object.values(stats).reduce((s, t) => s + (t.done || 0), 0);
+      const totalOk = Object.values(stats).reduce((s, t) => s + (t.ok || 0), 0);
+      const globalPct = totalDone ? Math.round((totalOk / totalDone) * 100) : 0;
+
+      function startQuiz(themeKey) {
+        const gens = GENERATORS[themeKey];
+        const qs = Array.from({ length: NB_QUESTIONS }, () => {
+          const g = pick(gens)();
+          if (g.choices) return { ...g, type: "qcm" };
+          if (themeKey === "decimaux" || themeKey === "calcul") return { ...g, type: "steps" };
+          return { ...g, type: "input" };
+        });
+        setTheme(themeKey);
+        setQuestions(qs);
+        setIdx(0);
+        setScore(0);
+        setAnswered(false);
+        setInput("");
+        setSteps("");
+        setStepsError(null);
+        setShowHint(false);
+        setStreak(0);
+        setScreen("quiz");
+      }
+
+      function validate() {
+        const q = questions[idx];
+        if (!q || answered) return;
+        if (q.type === "steps") {
+          const lines = steps.split(/\n|=/).map((l) => l.trim()).filter((l) => l.length > 0);
+          if (lines.length < 2 || !steps.includes("=")) {
+            setStepsError("Écris les étapes de ton calcul, une par ligne, avec le signe = (ex : 24 × 12 = 24 × 10 + 24 × 2 = 288).");
+            return;
+          }
+        }
+        setStepsError(null);
+        const good = checkAnswer(input, q.answer);
+        setIsCorrect(good);
+        setAnswered(true);
+        if (good) {
+          setScore((s) => s + 1);
+          setStreak((s) => s + 1);
+          setStats((s) => {
+            const t = s[theme] || { done: 0, ok: 0 };
+            return { ...s, [theme]: { done: t.done + 1, ok: t.ok + 1 } };
+          });
+        } else {
+          setStreak(0);
+          setStats((s) => {
+            const t = s[theme] || { done: 0, ok: 0 };
+            return { ...s, [theme]: { done: t.done + 1, ok: t.ok } };
+          });
+        }
+      }
+
+      function next() {
+        setAnswered(false);
+        setInput("");
+        setSteps("");
+        setStepsError(null);
+        setShowHint(false);
+        if (idx + 1 >= questions.length) setScreen("results");
+        else setIdx((i) => i + 1);
+      }
+
+      if (screen === "home") {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-6">
+            <div className="max-w-3xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="text-6xl mb-3">🧮</div>
+                <h1 className="text-4xl font-extrabold text-indigo-900">Révisions de Maths — 6ème</h1>
+                <p className="text-slate-500 mt-2">Choisis un chapitre et entraîne-toi avec 10 questions !</p>
+              </div>
+
+              {totalDone > 0 && (
+                <div className="bg-white rounded-2xl shadow p-4 mb-8 flex items-center justify-between">
+                  <div className="text-sm text-slate-600">
+                    <span className="font-bold text-indigo-700">{totalDone}</span> questions répondues ·{" "}
+                    <span className="font-bold text-emerald-600">{globalPct}%</span> de bonnes réponses
+                  </div>
+                  <div className="flex gap-1">{THEMES.map((t) => {
+                    const st = stats[t.key] || { done: 0, ok: 0 };
+                    const pct = st.done ? Math.round((st.ok / st.done) * 100) : 0;
+                    return <span key={t.key} title={`${t.label} : ${pct}%`} className="w-4 h-4 rounded-full border" style={{ background: st.done ? `hsl(${pct * 1.2}, 70%, 55%)` : "#e2e8f0" }} />;
+                  })}</div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {THEMES.map((t) => {
+                  const st = stats[t.key] || { done: 0, ok: 0 };
+                  const pct = st.done ? Math.round((st.ok / st.done) * 100) : null;
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => startQuiz(t.key)}
+                      className={`group bg-gradient-to-br ${t.color} rounded-2xl p-5 text-left text-white shadow-md hover:shadow-xl hover:-translate-y-1 transition-all`}
+                    >
+                      <div className="text-3xl mb-2">{t.emoji}</div>
+                      <div className="font-bold text-lg">{t.label}</div>
+                      {pct !== null && (
+                        <div className="mt-2 text-xs opacity-90">{pct}% de réussite ({st.done} q.)</div>
+                      )}
+                      <div className="mt-3 text-sm opacity-80 group-hover:opacity-100">Commencer →</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="text-center text-xs text-slate-400 mt-8">Le programme couvre : décimaux, fractions, calcul mental, géométrie, proportionnalité et conversions.</p>
+            </div>
+          </div>
+        );
+      }
+
+      if (screen === "quiz") {
+        const q = questions[idx];
+        const t = THEMES.find((x) => x.key === theme);
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-6">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex items-center justify-between mb-4">
+                <button onClick={() => setScreen("home")} className="text-slate-400 hover:text-slate-600 text-sm">← Quitter</button>
+                <div className="text-sm font-semibold text-indigo-700">{t.emoji} {t.label}</div>
+                <div className="text-sm text-slate-500">Question {idx + 1}/{questions.length}</div>
+              </div>
+
+              <div className="w-full bg-slate-200 rounded-full h-3 mb-6">
+                <div className="bg-indigo-500 h-3 rounded-full transition-all" style={{ width: `${((idx + (answered ? 1 : 0)) / questions.length) * 100}%` }} />
+              </div>
+
+              {streak >= 3 && (
+                <div className="text-center mb-3 text-sm font-bold text-orange-500">🔥 Série de {streak} bonnes réponses !</div>
+              )}
+
+              <div className="bg-white rounded-3xl shadow-lg p-8">
+                <div className="text-2xl font-bold text-slate-800 mb-6 text-center">{q.question}</div>
+
+                {q.type === "qcm" ? (
+                  <div className="grid gap-3">
+                    {q.choices.map((c, i) => (
+                      <button
+                        key={i}
+                        disabled={answered}
+                        onClick={() => setInput(c)}
+                        className={`w-full py-3 px-4 rounded-xl border-2 text-lg font-medium transition-all
+                          ${answered
+                            ? normalize(c) === normalize(q.answer)
+                              ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                              : normalize(c) === normalize(input)
+                                ? "border-rose-400 bg-rose-50 text-rose-600"
+                                : "border-slate-200 text-slate-400"
+                            : normalize(c) === normalize(input)
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                              : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50"}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    {q.type === "steps" && (
+                      <div className="mb-5">
+                        <label className="block text-sm font-semibold text-slate-600 mb-2">✏️ Écris les étapes de ton calcul (une étape par ligne, avec le signe =)</label>
+                        <textarea
+                          value={steps}
+                          onChange={(e) => setSteps(e.target.value)}
+                          disabled={answered}
+                          rows={3}
+                          placeholder={"Exemple :\n24 × 12 = 24 × 10 + 24 × 2\n= 240 + 48 = 288"}
+                          className="w-full border-2 border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 font-mono text-base outline-none resize-none"
+                        />
+                        {stepsError && (
+                          <div className="mt-2 text-sm bg-amber-50 border border-amber-200 rounded-xl p-2 text-amber-800">{stepsError}</div>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex gap-3">
+                      <input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") answered ? next() : validate(); }}
+                        disabled={answered}
+                        placeholder={q.type === "steps" ? "Résultat final..." : "Ta réponse..."}
+                        className="flex-1 border-2 border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xl outline-none"
+                      />
+                      <button onClick={validate} disabled={answered || !input || (q.type === "steps" && steps.trim() === "")} className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white font-bold px-6 rounded-xl transition-colors">
+                        Valider
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!answered && !showHint && (
+                  <button onClick={() => setShowHint(true)} className="mt-4 text-sm text-slate-400 hover:text-indigo-500">💡 Besoin d'un indice ?</button>
+                )}
+                {showHint && !answered && <div className="mt-4 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-800">💡 {q.hint}</div>}
+
+                {answered && (
+                  <div className={`mt-6 rounded-2xl p-4 text-center ${isCorrect ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                    <div className="font-bold text-lg">{isCorrect ? pick(PRAISE) : pick(ENCOURAGE)}</div>
+                    {q.type === "steps" && steps.trim() !== "" && (
+                      <div className="mt-3 text-left bg-white/70 rounded-xl p-3 text-sm">
+                        <div className="font-semibold text-slate-600 mb-1">Tes étapes :</div>
+                        <pre className="font-mono whitespace-pre-wrap text-slate-700">{steps.trim()}</pre>
+                      </div>
+                    )}
+                    {!isCorrect && <div className="mt-1">La bonne réponse était : <span className="font-extrabold">{q.answer}</span></div>}
+                    {q.stepsSolution && (
+                      <div className="mt-3 text-left bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                        <div className="text-sm font-semibold text-indigo-700 mb-1">📝 Correction détaillée :</div>
+                        <pre className="font-mono whitespace-pre-wrap text-sm text-slate-700">{q.stepsSolution}</pre>
+                      </div>
+                    )}
+                    <div className="mt-2 text-xs text-slate-500 italic">💡 {q.hint}</div>
+                    <button onClick={next} className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-8 py-2.5 rounded-xl transition-colors">
+                      {idx + 1 >= questions.length ? "Voir mon score →" : "Question suivante →"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center mt-4 text-sm text-slate-500">Score : <span className="font-bold text-indigo-600">{score}</span> / {idx + (answered ? 1 : 0)}</div>
+            </div>
+          </div>
+        );
+      }
+
+      const pct = Math.round((score / questions.length) * 100);
+      const medal = pct >= 90 ? { e: "🏆", msg: "Champion(ne) des maths !" } : pct >= 70 ? { e: "🥇", msg: "Très bien joué !" } : pct >= 50 ? { e: "🥈", msg: "Bon travail, continue !" } : { e: "💪", msg: "Courage, chaque essai compte !" };
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-6 flex items-center justify-center">
+          <div className="bg-white rounded-3xl shadow-lg p-10 max-w-md w-full text-center">
+            <div className="text-7xl mb-4">{medal.e}</div>
+            <h2 className="text-3xl font-extrabold text-indigo-900">{medal.msg}</h2>
+            <div className="mt-6 text-6xl font-black text-indigo-500">{score}/{questions.length}</div>
+            <div className="text-slate-500 mt-1">{pct}% de bonnes réponses</div>
+            <div className="w-full bg-slate-200 rounded-full h-4 mt-6">
+              <div className={`h-4 rounded-full ${pct >= 70 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${pct}%` }} />
+            </div>
+            <div className="flex gap-3 mt-8">
+              <button onClick={() => startQuiz(theme)} className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-xl transition-colors">Rejouer ce chapitre</button>
+              <button onClick={() => setScreen("home")} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors">Choisir un chapitre</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
